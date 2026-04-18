@@ -1,0 +1,109 @@
+.users-page {
+  padding: 60px 0;
+}
+
+.users-page .container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.users-page h1 {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.users-page p {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.user-form-section {
+  margin: 24px 0 36px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.user-form-section h2 {
+  margin: 0 0 12px;
+}
+
+.user-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  margin-bottom: 6px;
+  font-weight: 600;
+
+}
+
+.input-group input {
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.action-buttons {
+  grid-column: span 2;
+  display: flex;
+  gap: 10px;
+}
+
+.btn.small {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.error-text {
+  color: var(--danger-color);
+  margin: 12px 0;
+}
+
+@media (max-width: 768px) {
+  .user-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+.users-table-wrap {
+  overflow-x: auto;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.users-table th,
+.users-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.users-table th {
+  background-color: #f8fafc;
+  color: #111827;
+}
+
+.users-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.btn {
+  display: inline-block;
+  margin-top: 20px;
+}

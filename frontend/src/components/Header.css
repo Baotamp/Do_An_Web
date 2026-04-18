@@ -1,0 +1,150 @@
+.header {
+  background-color: var(--dark-bg);
+  color: white;
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.user-chip {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e5e7eb;
+  font-weight: 600;
+}
+
+.logo {
+  text-decoration: none;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.logo h1 {
+  font-size: 24px;
+  margin: 0;
+}
+
+.nav {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  transition: color 0.3s;
+  font-weight: 500;
+}
+
+.nav-link:hover,
+.nav-link-admin {
+  color: #93c5fd;
+}
+
+.user-button,
+.admin-button,
+.logout-button,
+.cart-link {
+  position: relative;
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.user-button {
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+.user-button:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.admin-button {
+  background-color: rgba(147, 197, 253, 0.18);
+}
+
+.admin-button:hover {
+  background-color: rgba(147, 197, 253, 0.28);
+}
+
+.logout-button {
+  background-color: rgba(248, 113, 113, 0.16);
+}
+
+.logout-button:hover {
+  background-color: rgba(248, 113, 113, 0.28);
+}
+
+.cart-link {
+  background-color: var(--primary-color);
+}
+
+.cart-link:hover {
+  background-color: #2563eb;
+}
+
+.cart-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: var(--danger-color);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .nav {
+    gap: 15px;
+    font-size: 14px;
+    order: 3;
+    width: 100%;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .logo h1 {
+    font-size: 18px;
+  }
+}

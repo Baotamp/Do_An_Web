@@ -1,0 +1,344 @@
+    ========================================
+    SCRIPT THUYẾT TRÌNH BACKEND/CORE LOGIC
+    Người 3 - 3-4 phút
+    ========================================
+
+    MỞ ĐẦU (30 giây)
+    ---
+    Xin chào các bạn. Mình là [Tên], đại diện cho phần Backend của dự án web bán điện thoại PhoneHub.
+
+    Hôm nay mình sẽ chia sẻ về:
+    1. Kiến trúc backend và công nghệ sử dụng
+    2. Hệ thống API endpoints chi tiết
+    3. Logic xử lý dữ liệu chính
+    4. Flow hoàn chỉnh từ khách hàng đến admin
+
+    ---
+
+    PHẦN 1: KIẾN TRÚC & CÔNG NGHỆ (45 giây)
+    ---
+    Backend chúng ta xây dựng trên nền tảng:
+
+    📌 Framework: Express.js - một framework Node.js nhẹ và mạnh mẽ
+    📌 ORM: Sequelize - giúp chúng ta tương tác với database một cách dễ dàng
+    📌 Database: Hỗ trợ cả SQLite (cho phát triển) và MySQL (cho production)
+    📌 Port: Chạy trên port 4000
+    📌 CORS: Được kích hoạt để frontend có thể gọi từ domain khác
+
+    Ưu điểm của kiến trúc này:
+    ✓ Nhẹ và dễ setup - không cần cấu hình phức tạp
+    ✓ Hybrid database - linh hoạt chuyển đổi dev và production
+    ✓ Dễ mở rộng - có thể thêm tính năng mới một cách nhanh chóng
+
+    ---
+
+    PHẦN 2: CƠ SỞ DỮ LIỆU - 4 BẢNG CHÍNH (1 phút)
+    ---
+    Backend chúng ta quản lý 4 bảng dữ liệu chính:
+
+    【1】BẢNG USERS (Quản lý nhân viên)
+    - id: Mã nhân viên (tự tăng)
+    - name: Tên nhân viên
+    - email: Email đăng nhập (unique)
+    - role: Vai trò (Quản trị, Nhân viên bán hàng, CSKH, Giao nhận, Kiểm hàng)
+    - timestamps: Ngày tạo/cập nhật
+
+    Ví dụ:
+    → Trương Hoàng Thái Thuận (Quản trị)
+    → Nguyễn Đức Quang (Nhân viên bán hàng)
+
+    【2】BẢNG PRODUCTS (Kho sản phẩm)
+    - id: Mã sản phẩm
+    - name: Tên điện thoại (iPhone 15, Galaxy S24, etc.)
+    - brand: Hãng (Apple, Samsung, Xiaomi, OPPO)
+    - price: Giá bán hiện tại
+    - originalPrice: Giá gốc (để tính % giảm)
+    - stock: Số lượng tồn kho
+    - specs: Thông số kỹ thuật (màn hình, chip, v.v.)
+    - rating: Đánh giá sao (4.5, 4.8, etc.)
+    - image: Hình ảnh (emoji 📱)
+
+    Ví dụ:
+    → iPhone 15 Pro Max: 35.9M (giảm từ 39.99M), 15 cái tồn kho
+
+    【3】BẢNG CART_ITEMS (Giỏ hàng tạm thời)
+    - id: ID item trong giỏ
+    - productId: Liên kết đến Products
+    - name, brand, price, image: Snapshot dữ liệu sản phẩm
+    - quantity: Số lượng muốn mua
+
+    Logic: Khi thêm sản phẩm đã có trong giỏ → tự động cộng thêm qty
+
+    【4】BẢNG ORDERS (Đơn hàng hoàn tất)
+    - id: Mã đơn hàng
+    - customerName: Tên khách hàng
+    - customerEmail, customerPhone, customerAddress: Thông tin giao hàng
+    - totalAmount: Tổng tiền đơn hàng (tự tính từ items)
+    - status: pending/confirmed (chờ xác nhận/đã xác nhận)
+    - paymentMethod: cash/qr (thanh toán nạp tiền mặt hoặc QR)
+    - paymentStatus: pending/paid (chưa/đã thanh toán)
+    - itemsJson: Lưu snapshot danh sách sản phẩm dưới dạng JSON
+    - timestamps: Ngày tạo/cập nhật
+
+    ---
+
+    PHẦN 3: HỆ THỐNG API ENDPOINTS (1 phút 15 giây)
+    ---
+    Chúng ta có tổng cộng 22 API endpoints được chia làm 5 nhóm:
+
+    🔹 HEALTH CHECK (1 endpoint)
+    GET /api/health
+    → Kiểm tra trạng thái kết nối database
+    → Trả về: { status: "ok", dialect: "mysql" hoặc "sqlite" }
+    → Dùng để đảm bảo backend đang chạy bình thường
+
+    🔹 USERS (5 endpoints)
+    GET /api/users
+    → Lấy danh sách tất cả nhân viên, sắp xếp theo ID
+
+    GET /api/users/:id
+    → Lấy chi tiết 1 nhân viên cụ thể
+
+    POST /api/users
+    → Tạo nhân viên mới
+    → Request: { name, email, role }
+    → Validation: Email không được trùng (unique)
+
+    PUT /api/users/:id
+    → Cập nhật thông tin nhân viên
+    → Có thể update name, email, role riêng lẻ
+
+    DELETE /api/users/:id
+    → Xóa nhân viên khỏi hệ thống
+
+    🔹 PRODUCTS (5 endpoints)
+    GET /api/products
+    → Lấy toàn bộ sản phẩm (dùng cho trang shop)
+
+    GET /api/products/:id
+    → Lấy chi tiết sản phẩm (dùng cho trang chi tiết)
+
+    POST /api/products
+    → Thêm sản phẩm mới vào kho
+    → Request: { name, brand, price, specs, description, details, stock }
+    → Check: Bắt buộc các field: name, brand, price, specs, description, details
+
+    PUT /api/products/:id
+    → Cập nhật thông tin sản phẩm (giá, stock, specs, etc.)
+    → Type-safe: Chuyển đổi price/stock sang kiểu Number
+
+    DELETE /api/products/:id
+    → Xóa sản phẩm (khi hàng hết và không cần bán nữa)
+
+    🔹 CART (5 endpoints)
+    GET /api/cart
+    → Xem giỏ hàng hiện tại của khách hàng
+
+    POST /api/cart
+    → Thêm sản phẩm vào giỏ hàng
+    → Smart feature: Nếu sản phẩm đã tồn tại → qty += 1 (không duplicate)
+
+    PUT /api/cart/:id
+    → Cập nhật số lượng sản phẩm
+    → Logic: Nếu qty ≤ 0 → tự động xóa item khỏi giỏ
+
+    DELETE /api/cart/:id
+    → Xóa 1 sản phẩm khỏi giỏ hàng
+
+    DELETE /api/cart
+    → Xóa toàn bộ giỏ hàng (khi khách hủy đơn)
+
+    🔹 ORDERS (6 endpoints)
+    GET /api/orders
+    → Lấy tất cả đơn hàng (dùng cho admin xem)
+    → Sắp xếp từ mới nhất đến cũ nhất
+
+    GET /api/orders/:id
+    → Lấy chi tiết 1 đơn hàng cụ thể
+
+    POST /api/orders
+    → Tạo đơn hàng mới từ giỏ hàng
+    → Request: { items: [{id, name, brand, price, quantity}], ...customer info }
+    → Logic phức tạp:
+        - Tính tổng tiền tự động
+        - Nếu paymentMethod = "qr" → status = "confirmed", paymentStatus = "paid"
+        - Nếu paymentMethod = "cash" → status = "pending", paymentStatus = "pending"
+        - Lưu items dưới dạng JSON snapshot
+        - Auto clear giỏ hàng sau tạo đơn thành công
+
+    PUT /api/orders/:id
+    → Cập nhật trạng thái đơn hàng
+    → Admin có thể update: status (pending→confirmed) & paymentStatus (pending→paid)
+    → Khi cập nhật → tự động lưu timestamp
+
+    ---
+
+    PHẦN 4: LOGIC XỬ LÝ DỮ LIỆU - CÁC TÍNH NĂNG THÔNG MINH (45 giây)
+    ---
+    Backend chúng ta có vài điểm thông minh:
+
+    【Logic 1】Smart Cart - Giỏ Hàng Thông Minh
+    Khi khách hàng thêm sản phẩm vào giỏ:
+    - Bước 1: Kiểm tra xem sản phẩm này đã có trong giỏ chưa
+    - Nếu có → Tăng qty (quantity) thêm 1 thay vì tạo duplicate
+    - Nếu chưa → Tạo cart item mới với qty = 1
+
+    Ví dụ:
+    Lần 1 add iPhone 15 → Giỏ: [iPhone 15 x1]
+    Lần 2 add iPhone 15 → Giỏ: [iPhone 15 x2] (không phải [iPhone 15 x1, iPhone 15 x1])
+
+    【Logic 2】Flexible Cart Update
+    Khách hàng có thể linh hoạt thay đổi số lượng:
+    - Tăng qty: PUT /api/cart/:id với qty = 3
+    - Giảm qty: PUT /api/cart/:id với qty = 1
+    - Xóa: PUT /api/cart/:id với qty = 0 (hoặc DELETE)
+
+    【Logic 3】Order Processing - Xử Lý Đặt Hàng
+    Khi khách hàng nhấn "Thanh toán":
+    - Bước 1: Tính tổng tiền từ items
+    Công thức: totalAmount = Σ(item.price × item.quantity)
+    - Bước 2: Kiểm tra phương thức thanh toán
+    Nếu QR code → Order ngay được confirmed + paid
+    Nếu cash → Status pending chờ admin xác nhận
+    - Bước 3: Lưu snapshot items dưới dạng JSON
+    Lý do: Vì giá sản phẩm có thể thay đổi, lưu JSON để giữ dữ liệu đặt hàng
+    - Bước 4: Auto clear cart
+    Xóa toàn bộ cart items để khách có thể tiếp tục mua hàng
+
+    JSON Example:
+    itemsJson: [
+        { id: 1, name: "iPhone 15", brand: "Apple", price: 26900000, quantity: 2 },
+        { id: 5, name: "Galaxy A54", brand: "Samsung", price: 12990000, quantity: 1 }
+    ]
+    totalAmount: 26900000 × 2 + 12990000 × 1 = 66790000
+
+    【Logic 4】Validation & Error Handling
+    Mỗi API endpoint đều có validation:
+    - Kiểm tra email unique (không cho phép 2 user trùng email)
+    - Kiểm tra required fields
+    - Kiểm tra type data (price, qty phải là number)
+    - Try-catch toàn bộ lỗi database
+    - Trả về status codes rõ ràng:
+    ✓ 201 Created (tạo mới thành công)
+    ✓ 400 Bad Request (dữ liệu sai)
+    ✓ 404 Not Found (không tìm thấy)
+    ✓ 500 Server Error (lỗi database)
+
+    ---
+
+    PHẦN 5: FLOW HOÀN CHỈNH - TỬ KHÁCH ĐẾN ADMIN (30 giây)
+    ---
+    Hành trình của 1 đơn hàng:
+
+    [1] Khách hàng mở website
+        ↓ Gọi: GET /api/products
+        ↓ Backend trả về danh sách điện thoại
+
+    [2] Khách xem chi tiết sản phẩm
+        ↓ Gọi: GET /api/products/:id
+        ↓ Backend trả về thông tin chi tiết
+
+    [3] Khách thêm vào giỏ hàng
+        ↓ Gọi: POST /api/cart
+        ↓ Backend add item (hoặc tăng qty nếu trùng)
+
+    [4] Khách xem & chỉnh giỏ hàng
+        ↓ Gọi: GET /api/cart + PUT /api/cart/:id
+        ↓ Backend cho xem & cho sửa qty
+
+    [5] Khách nhấn "Thanh toán"
+        ↓ Gọi: POST /api/orders
+        ↓ Backend: Tính tiền, lưu JSON items, clear cart
+
+    [6] Admin login → xem đơn hàng
+        ↓ Gọi: GET /api/orders
+        ↓ Backend trả về danh sách tất cả đơn
+
+    [7] Admin xác nhận đơn hàng
+        ↓ Gọi: PUT /api/orders/:id với status="confirmed"
+        ↓ Backend cập nhật status
+
+    [8] Admin đánh dấu "đã thanh toán"
+        ↓ Gọi: PUT /api/orders/:id với paymentStatus="paid"
+        ↓ Backend cập nhật thanh toán
+
+    [9] Giao hàng thành công
+        ↓ Đơn hàng hoàn tất
+
+    ---
+
+    PHẦN 6: TÓM TẮT VÀ ĐỀ CẬP TÍNH NĂNG NỔIBẬT (1 phút)
+    ---
+    Tóm lại, backend chúng ta có những đặc điểm:
+
+    ✅ TOÀN BỘ CRUD OPERATIONS
+    Create, Read, Update, Delete cho tất cả 4 entities
+
+    ✅ SMART CART LOGIC
+    Tự động merge items, không duplicate
+
+    ✅ FLEXIBLE ORDER SYSTEM
+    Lưu snapshot JSON, hỗ trợ 2 phương thức thanh toán
+
+    ✅ COMPREHENSIVE VALIDATION
+    Kiểm tra email unique, required fields, type data
+
+    ✅ ERROR HANDLING
+    Try-catch toàn bộ, status codes rõ ràng
+
+    ✅ HYBRID DATABASE SUPPORT
+    SQLite cho dev, MySQL cho production
+
+    ✅ AUTO SEEDING DATA
+    Lần chạy đầu tự động insert 5 nhân viên + 6 sản phẩm mẫu
+
+    ✅ HEALTH CHECK ENDPOINT
+    Để kiểm tra trạng thái backend
+
+    ---
+
+    PHẦN 7: DEMO LIVE (Nếu có máy chiếu) (1 phút)
+    ---
+    Nếu bạn là admin/developer, có thể demo các API bằng Postman:
+
+    📌 Demo 1: GET /api/products
+    → Hiển thị toàn bộ sản phẩm có trong kho
+
+    📌 Demo 2: POST /api/orders
+    → Tạo 1 đơn hàng mẫu, show JSON snapshot
+
+    📌 Demo 3: GET /api/orders
+    → Xem lịch sử tất cả đơn hàng
+
+    📌 Demo 4: PUT /api/users/:id
+    → Update thông tin nhân viên
+
+    ---
+
+    KẾT LUẬN (30 giây)
+    ---
+    Backend PhoneHub là một hệ thống hoàn chỉnh với:
+    - 4 bảng dữ liệu đầy đủ
+    - 22 API endpoints bao quát
+    - Logic xử lý thông minh (smart cart, order processing)
+    - Validation & error handling toàn diện
+    - Dễ mở rộng cho các tính năng mới
+
+    Toàn bộ backend được thiết kế với tương lai trong tâm:
+    - Hỗ trợ cả SQLite (dev) và MySQL (production)
+    - Dễ migrate database
+    - Code sạch, dễ maintain
+
+    Cảm ơn mọi người đã lắng nghe! Có câu hỏi nào không?
+
+    ========================================
+    NOTES KHI THUYẾT TRÌNH:
+    ========================================
+    ✓ Nói từ từ, rõ ràng, đừng nói quá nhanh
+    ✓ Nhấn mạnh các tính năng thông minh (smart cart, auto clear cart)
+    ✓ Dùng examples cụ thể (iPhone 15, Galaxy S24)
+    ✓ Giữ eye contact với audience
+    ✓ Chuẩn bị demo live nếu có thể
+    ✓ Giải thích từng endpoint rõ ràng (GET, POST, PUT, DELETE là gì)
+    ✓ Nếu bị hỏi khó, nói "đây là phần frontend xử lý" hoặc "em sẽ tìm hiểu thêm"
+    ========================================

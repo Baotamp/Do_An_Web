@@ -1,0 +1,34 @@
+.shop-products-page {
+  padding: 60px 0;
+}
+
+.shop-products-page .container {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.shop-products-hero {
+  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  padding: 28px;
+  margin-bottom: 24px;
+}
+
+.shop-products-hero h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+}
+
+.shop-products-hero p {
+  margin: 0;
+  color: #4b5563;
+  max-width: 720px;
+}
+
+.shop-admin-shortcut {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

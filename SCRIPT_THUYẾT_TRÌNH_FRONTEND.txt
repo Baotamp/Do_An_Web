@@ -1,0 +1,265 @@
+========================================
+SCRIPT THUYẾT TRÌNH FRONTEND/UI
+Người 4 - 3-4 phút
+========================================
+
+MỞ ĐẦU (30 giây)
+---
+Xin chào các bạn. Mình là [Tên], đại diện cho phần Frontend của dự án web bán điện thoại PhoneHub.
+
+Hôm nay mình sẽ chia sẻ về:
+1. Kiến trúc frontend và công nghệ sử dụng
+2. Cấu trúc components và pages
+3. State management và logic xử lý
+4. Flow trải nghiệm người dùng
+5. Demo giao diện
+
+---
+
+PHẦN 1: KIẾN TRÚC & CÔNG NGHỆ (45 giây)
+---
+Frontend chúng ta xây dựng trên nền tảng hiện đại:
+
+📌 Framework: React 19 - thư viện JavaScript phổ biến nhất cho UI
+📌 Build Tool: Vite - công cụ build nhanh, hot reload tức thời
+📌 Routing: React Router DOM v6 - điều hướng trang SPA
+📌 HTTP Client: Axios - gọi API backend một cách dễ dàng
+📌 Styling: CSS Modules + Custom CSS - responsive design
+📌 State Management: React Context API - quản lý state toàn cục
+📌 Storage: LocalStorage - lưu trữ dữ liệu client-side
+
+Ưu điểm của kiến trúc này:
+✓ Performance cao với Vite's fast refresh
+✓ Component-based architecture dễ maintain
+✓ Responsive design cho mobile và desktop
+✓ SEO-friendly với React Helmet (nếu cần)
+
+---
+
+PHẦN 2: CẤU TRÚC COMPONENTS & PAGES (1 phút)
+---
+Frontend được tổ chức theo cấu trúc component-based:
+
+【COMPONENTS】(Reusable UI Elements)
+- Header: Navigation bar với logo, menu, giỏ hàng, auth buttons
+- ProductCard: Card hiển thị sản phẩm (hình, tên, giá, rating)
+- ProductList: Grid layout cho danh sách sản phẩm
+- Footer: Thông tin liên hệ, copyright
+- AdminRoute: Bảo vệ routes admin (chỉ admin mới vào)
+- ProtectedRoute: Bảo vệ routes user (phải login mới xem)
+
+【PAGES】(Main Views - 12 pages)
+
+🔹 PUBLIC PAGES (Khách hàng)
+- Home: Trang chủ với hero banner, featured products
+- Products: Trang shop với filter, search, sort
+- ProductDetail: Chi tiết sản phẩm với specs, reviews
+- Cart: Giỏ hàng với checkout form
+- Auth: Đăng nhập/đăng ký cho khách hàng
+
+🔹 ADMIN PAGES (Quản trị)
+- AdminDashboard: Dashboard tổng quan (stats, quick actions)
+- AdminProducts: CRUD sản phẩm (thêm/sửa/xóa điện thoại, quản lý tồn kho, upload ảnh và filter theo brand)
+- AdminOrders: Quản lý đơn hàng (xem, update status)
+- Users: Quản lý nhân viên/user (thêm/sửa/xóa user, phân quyền admin/user, tìm kiếm và kích hoạt/deactivate)
+
+🔹 UTILITY PAGES
+- NotFound: 404 page khi route không tồn tại
+
+---
+
+PHẦN 3: STATE MANAGEMENT - 3 CONTEXTS CHÍNH (45 giây)
+---
+Chúng ta sử dụng React Context để quản lý state toàn cục:
+
+【1】AuthContext - Quản lý authentication khách hàng
+- registeredUsers: Danh sách users đã đăng ký (localStorage)
+- currentUser: User đang login
+- Demo user: user@phonehub.com / user123
+- Functions: login, logout, register
+
+【2】AdminContext - Quản lý admin authentication
+- adminUser: Admin đang login
+- isAdmin: Boolean check quyền admin
+- Demo admin: admin@phonehub.com / admin123
+- Functions: loginAsAdmin, logoutAdmin
+
+【3】CartContext - Quản lý giỏ hàng
+- cartItems: Array sản phẩm trong giỏ
+- Persistence: Lưu localStorage tự động
+- Functions:
+  - addToCart(): Thêm sản phẩm (smart merge nếu trùng)
+  - removeFromCart(): Xóa sản phẩm
+  - updateQuantity(): Thay đổi số lượng
+  - clearCart(): Xóa toàn bộ giỏ
+
+Logic thông minh:
+- Khi add sản phẩm đã có → qty += 1 (không duplicate)
+- Khi update qty ≤ 0 → tự động remove
+- Tự động sync với localStorage
+
+---
+
+PHẦN 4: LOGIC XỬLÝ - API INTEGRATION & ROUTING (1 phút)
+---
+Frontend kết nối với backend qua REST API:
+
+【API CONFIGURATION】
+- Development: http://localhost:4000
+- Production: https://backend-webbandienthoai.onrender.com
+- Axios instance với base URL tự động
+
+【ROUTING SYSTEM】
+React Router với nested routes:
+- Public routes: /, /products, /product/:id, /cart, /auth
+- Admin routes: /admin, /admin/products, /admin/orders, /admin/users
+- Protected routes: Sử dụng ProtectedRoute component
+- Admin routes: Sử dụng AdminRoute component
+
+【DATA FETCHING】
+- useEffect hooks để fetch data khi component mount
+- Loading states và error handling
+- CRUD operations: GET, POST, PUT, DELETE cho tất cả entities
+
+【FORM HANDLING】
+- Controlled components với useState
+- Validation client-side (required fields, email format)
+- Real-time feedback cho user
+
+【SEARCH & FILTER】
+- Search by name/brand
+- Filter by brand (Apple, Samsung, Xiaomi, OPPO)
+- Sort by: newest, price low-high, price high-low, rating
+
+---
+
+PHẦN 5: FLOW TRẢI NGHIỆM NGƯỜI DÙNG (45 giây)
+---
+Hành trình của khách hàng từ lúc vào website:
+
+[1] Landing Page (Home)
+    → Hero banner giới thiệu PhoneHub
+    → Featured products nổi bật
+    → Call-to-action buttons
+
+[2] Browse Products (Products page)
+    → Grid layout responsive
+    → Search bar + filters (brand, price)
+    → Sort options (newest, price, rating)
+    → Pagination nếu cần
+
+[3] View Product Details
+    → Hình ảnh lớn, specs chi tiết
+    → Rating & reviews
+    → "Add to Cart" button
+
+[4] Shopping Cart
+    → List items với quantity controls
+    → Total price calculation
+    → Checkout form (name, phone, address)
+    → Payment options: Cash hoặc QR code
+
+[5] Authentication
+    → Login/Register forms
+    → Demo credentials cho testing
+    → Redirect sau login thành công
+
+[6] Admin Dashboard
+    → Stats overview (total products, orders, users)
+    → Quick navigation to management pages
+    → Logout button
+
+[7] Admin Management
+    → CRUD tables cho Products, Orders, Users
+    → AdminProducts: quản lý sản phẩm với add/edit form, preview ảnh và kiểm soát tồn kho
+    → Users: quản lý nhân viên/user với phân quyền, cập nhật thông tin và điều kiện active/inactive
+    → Status updates cho orders
+    → Search/filter trong tables
+
+---
+
+PHẦN 6: TÓM TẮT VÀ TÍNH NĂNG NỔI BẬT (1 phút)
+---
+Tóm lại, frontend PhoneHub có những đặc điểm:
+
+✅ MODERN TECH STACK
+React 19 + Vite + React Router + Axios
+
+✅ RESPONSIVE DESIGN
+Mobile-first approach, works on all devices
+
+✅ COMPONENT-BASED ARCHITECTURE
+Reusable components, easy to maintain
+
+✅ SMART STATE MANAGEMENT
+Context API với localStorage persistence
+
+✅ COMPREHENSIVE AUTH SYSTEM
+Separate auth cho customers và admins
+
+✅ INTELLIGENT CART LOGIC
+Auto-merge items, quantity management
+
+✅ RICH USER EXPERIENCE
+Loading states, error handling, smooth transitions
+
+✅ ADMIN DASHBOARD
+Complete CRUD interface cho management
+
+✅ SEO & PERFORMANCE
+Fast loading, clean URLs, meta tags
+
+---
+
+PHẦN 7: DEMO LIVE (Nếu có máy chiếu) (1 phút)
+---
+Demo các tính năng chính:
+
+📌 Demo 1: Customer Journey
+   → Browse products → Add to cart → Checkout
+   → Show responsive design trên mobile/desktop
+
+📌 Demo 2: Admin Management
+   → Login as admin để vào dashboard quản trị
+   → Demo AdminProducts: thêm/sửa/xóa sản phẩm, cập nhật tồn kho, upload ảnh và filter theo brand
+   → Demo Users: quản lý user/admin, đổi vai trò admin/user, active/inactive account
+   → Show how product and user changes xuất hiện ngay trong bảng quản lý
+   → Update orders → Show real-time updates
+
+📌 Demo 3: Search & Filter
+   → Search "iPhone" → Filter by Samsung → Sort by price
+   → Show dynamic results
+
+📌 Demo 4: Cart Functionality
+   → Add multiple items → Update quantities → Checkout
+   → Show smart merge logic
+
+---
+
+KẾT LUẬN (30 giây)
+---
+Frontend PhoneHub là một ứng dụng React hoàn chỉnh với:
+- UI/UX thân thiện, responsive
+- State management thông minh
+- Integration mượt mà với backend
+- Admin interface đầy đủ tính năng
+- Performance tối ưu
+
+Thiết kế với user experience làm trung tâm:
+- Dễ sử dụng cho cả khách hàng và admin
+- Fast loading, smooth interactions
+- Accessible và inclusive design
+
+Cảm ơn mọi người đã lắng nghe! Có câu hỏi nào không?
+
+========================================
+NOTES KHI THUYẾT TRÌNH:
+========================================
+✓ Demo live nếu có máy chiếu - show actual website
+✓ Nhấn mạnh responsive design - zoom in/out browser
+✓ Giải thích component reusability - show ProductCard used everywhere
+✓ Dùng examples cụ thể (iPhone 15, Galaxy S24)
+✓ Giữ eye contact, nói chậm rõ ràng
+✓ Nếu bị hỏi technical, giải thích React Context vs Redux
+✓ Prepare screenshots nếu không demo live được
+========================================
