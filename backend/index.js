@@ -86,658 +86,161 @@ const CartItem = sequelize.define('CartItem', {
   timestamps: true,
 });
 
-const Order = sequelize.define('Order', {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  customerName: { type: DataTypes.STRING, allowNull: false, defaultValue: 'Khách lẻ' },
-  customerEmail: { type: DataTypes.STRING, allowNull: true },
-  customerPhone: { type: DataTypes.STRING, allowNull: true },
-  customerAddress: { type: DataTypes.STRING, allowNull: true },
-  totalAmount: { type: DataTypes.INTEGER, allowNull: false },
-  status: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-  paymentMethod: { type: DataTypes.STRING, allowNull: false, defaultValue: 'cash' },
-  paymentStatus: { type: DataTypes.STRING, allowNull: false, defaultValue: 'pending' },
-  itemsJson: { type: DataTypes.TEXT, allowNull: false },
-}, {
-  tableName: 'orders',
-  timestamps: true,
-});
-
-const Review = sequelize.define('Review', {
-  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-  productId: { type: DataTypes.INTEGER, allowNull: false },
-  userId: { type: DataTypes.INTEGER, allowNull: true },
-  userName: { type: DataTypes.STRING, allowNull: false },
-  rating: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 5 },
-  comment: { type: DataTypes.TEXT, allowNull: false },
-}, {
-  tableName: 'reviews',
-  timestamps: true,
-});
-
-const defaultProducts = [
-  {
-    name: 'iPhone 15 Pro Max',
-    brand: 'Apple',
-    price: 35900000,
-    originalPrice: 39990000,
-    specs: '6.7" AMOLED | A17 Pro | 256GB',
-    rating: 4.8,
-    reviews: 245,
-    image: '📱',
-    description: 'Flagship iPhone mới nhất với công nghệ camera tiên tiến',
-    details: 'Màn hình AMOLED 6.7 inch, Chip A17 Pro, Camera 48MP, Pin 4685mAh, 5G, Titanium',
-    fullDescription: 'iPhone 15 Pro Max là chiếc iPhone mạnh nhất của Apple với chip A17 Pro và thiết kế Titanium.',
-    stock: 15,
-  },
-  {
-    name: 'Samsung Galaxy S24 Ultra',
-    brand: 'Samsung',
-    price: 32990000,
-    originalPrice: 36990000,
-    specs: '6.8" Dynamic AMOLED | Snapdragon 8 Gen 3',
-    rating: 4.7,
-    reviews: 189,
-    image: '📱',
-    description: 'Điện thoại flagship của Samsung với hiệu năng cực mạnh',
-    details: 'Màn hình Dynamic AMOLED 120Hz, Snapdragon 8 Gen 3, Camera 50MP, 5000mAh, S Pen',
-    fullDescription: 'Galaxy S24 Ultra nổi bật với S Pen tích hợp, camera chất lượng cao và hiệu năng flagship.',
-    stock: 12,
-  },
-  {
-    name: 'Xiaomi 14 Ultra',
-    brand: 'Xiaomi',
-    price: 19990000,
-    originalPrice: 22990000,
-    specs: '6.73" AMOLED | Snapdragon 8 Gen 3',
-    rating: 4.6,
-    reviews: 156,
-    image: '📱',
-    description: 'Giá tốt nhất cho flagship performance',
-    details: 'Màn hình AMOLED 120Hz, Snapdragon 8 Gen 3, Camera Leica 50MP, 5000mAh',
-    fullDescription: 'Xiaomi 14 Ultra mang lại hiệu năng mạnh và hệ thống camera Leica ấn tượng.',
-    stock: 20,
-  },
-  {
-    name: 'OPPO Find X6 Pro',
-    brand: 'OPPO',
-    price: 21990000,
-    originalPrice: 24990000,
-    specs: '6.82" AMOLED | Snapdragon 8 Gen 3',
-    rating: 4.5,
-    reviews: 98,
-    image: '📱',
-    description: 'Thiết kế đẹp với công nghệ sạc nhanh',
-    details: 'Màn hình AMOLED 120Hz, Snapdragon 8 Gen 3, Sạc 100W, Camera 50MP',
-    fullDescription: 'OPPO Find X6 Pro phù hợp người dùng thích thiết kế cao cấp và sạc siêu nhanh.',
-    stock: 18,
-  },
-  {
-    name: 'iPhone 15',
-    brand: 'Apple',
-    price: 26900000,
-    originalPrice: 29990000,
-    specs: '6.1" Super Retina | A16 Bionic',
-    rating: 4.7,
-    reviews: 312,
-    image: '📱',
-    description: 'iPhone tiêu chuẩn với hiệu năng mạnh mẽ',
-    details: 'Màn hình 6.1 inch, A16 Bionic, Camera 48MP, 5G',
-    fullDescription: 'iPhone 15 là lựa chọn cân bằng giữa hiệu năng, thiết kế và độ ổn định.',
-    stock: 25,
-  },
-  {
-    name: 'Samsung Galaxy A54',
-    brand: 'Samsung',
-    price: 12990000,
-    originalPrice: 14990000,
-    specs: '6.4" Super AMOLED | Exynos 1380',
-    rating: 4.4,
-    reviews: 267,
-    image: '📱',
-    description: 'Smartphone tầm trung tốt nhất hiện nay',
-    details: 'Màn hình Super AMOLED 120Hz, Exynos 1380, Camera 50MP, Pin 5000mAh',
-    fullDescription: 'Galaxy A54 là mẫu máy tầm trung nổi bật với pin bền, màn hình đẹp và camera ổn định.',
-    stock: 30,
-  },
-];
-
-const serializeOrder = (orderInstance) => {
-  const order = orderInstance.get ? orderInstance.get({ plain: true }) : orderInstance;
-  return {
-    ...order,
-    items: order.itemsJson ? JSON.parse(order.itemsJson) : [],
-  };
-};
-
-const serializeUser = (userInstance) => {
-  const user = userInstance.get ? userInstance.get({ plain: true }) : userInstance;
-  const { passwordHash, ...safeUser } = user;
-  return safeUser;
-};
-
-const generateAuthToken = (user) => jwt.sign(
-  {
-    sub: user.id,
-    email: user.email,
-    role: user.role,
-  },
-  jwtSecret,
-  { expiresIn: jwtExpiresIn }
-);
-
-app.get('/', (req, res) => {
-  res.json({
-    message: 'PhoneHub backend is running',
-    endpoints: [
-      '/api/health',
-      '/api/auth/register',
-      '/api/auth/login',
-      '/api/users',
-      '/api/products',
-      '/api/cart',
-      '/api/orders',
-    ],
-  });
-});
-
-app.get('/api/users', async (req, res) => {
-  try {
-    const users = await User.findAll({ order: [['id', 'ASC']] });
-    res.json(users.map(serializeUser));
-  } catch (err) {
-    console.error('GET /api/users error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn users' });
-  }
-});
-
-app.get('/api/users/:id', async (req, res) => {
-  try {
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User không tồn tại' });
-    res.json(serializeUser(user));
-  } catch (err) {
-    console.error('GET /api/users/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn user' });
-  }
-});
-
-app.post('/api/auth/register', async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: 'Thiếu fields name/email/password' });
-    }
-
-    if (String(password).length < 6) {
-      return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
-    }
-
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: 'Email đã tồn tại' });
-    }
-
-    const passwordHash = await bcrypt.hash(String(password), 10);
-    const newUser = await User.create({
-      name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
-      role: 'Khách hàng',
-      passwordHash,
-    });
-
-    res.status(201).json({
-      message: 'Đăng ký tài khoản thành công',
-      user: serializeUser(newUser),
-    });
-  } catch (err) {
-    console.error('POST /api/auth/register error', err);
-    res.status(500).json({ error: 'Lỗi khi đăng ký tài khoản' });
-  }
-});
-
-app.post('/api/auth/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Thiếu fields email/password' });
-    }
-
-    const normalizedEmail = String(email).trim().toLowerCase();
-    const user = await User.findOne({ where: { email: normalizedEmail } });
-    if (!user || !user.passwordHash) {
-      return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
-    }
-
-    const isMatch = await bcrypt.compare(String(password), user.passwordHash);
-    if (!isMatch) {
-      return res.status(401).json({ error: 'Email hoặc mật khẩu không đúng' });
-    }
-
-    const safeUser = serializeUser(user);
-    const token = generateAuthToken(safeUser);
-
-    res.json({
-      message: 'Đăng nhập thành công',
-      token,
-      user: safeUser,
-    });
-  } catch (err) {
-    console.error('POST /api/auth/login error', err);
-    res.status(500).json({ error: 'Lỗi khi đăng nhập' });
-  }
-});
-
-app.post('/api/users', async (req, res) => {
-  try {
-    const { name, email, role } = req.body;
-    if (!name || !email || !role) {
-      return res.status(400).json({ error: 'Thiếu fields name/email/role' });
-    }
-
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      return res.status(400).json({ error: 'Email đã tồn tại' });
-    }
-
-    const newUser = await User.create({
-      name: String(name).trim(),
-      email: String(email).trim().toLowerCase(),
-      role,
-    });
-    res.status(201).json(serializeUser(newUser));
-  } catch (err) {
-    console.error('POST /api/users error', err);
-    res.status(500).json({ error: 'Lỗi khi tạo user' });
-  }
-});
-
-app.put('/api/users/:id', async (req, res) => {
-  try {
-    const { name, email, role } = req.body;
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User không tồn tại' });
-
-    if (email) {
-      const sameEmail = await User.findOne({ where: { email, id: { [Sequelize.Op.ne]: user.id } } });
-      if (sameEmail) {
-        return res.status(400).json({ error: 'Email đã được sử dụng' });
-      }
-    }
-
-    user.name = name || user.name;
-    user.email = email ? String(email).trim().toLowerCase() : user.email;
-    user.role = role || user.role;
-    await user.save();
-
-    res.json(serializeUser(user));
-  } catch (err) {
-    console.error('PUT /api/users/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi cập nhật user' });
-  }
-});
-
-app.delete('/api/users/:id', async (req, res) => {
-  try {
-    const user = await User.findByPk(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User không tồn tại' });
-
-    await user.destroy();
-    res.json({ message: 'Xóa user thành công' });
-  } catch (err) {
-    console.error('DELETE /api/users/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi xóa user' });
-  }
-});
-
 app.get('/api/products', async (req, res) => {
   try {
-    const { search = '' } = req.query;
-    const trimmedSearch = String(search).trim();
-
-    const whereClause = trimmedSearch
+    const search = String(req.query.search || '').trim();
+    const where = search
       ? {
           [Op.or]: [
-            { name: { [Op.like]: `%${trimmedSearch}%` } },
-            { brand: { [Op.like]: `%${trimmedSearch}%` } },
-            { description: { [Op.like]: `%${trimmedSearch}%` } },
-            { details: { [Op.like]: `%${trimmedSearch}%` } },
+            { name: { [Op.like]: `%${search}%` } },
+            { brand: { [Op.like]: `%${search}%` } },
+            { description: { [Op.like]: `%${search}%` } },
+            { details: { [Op.like]: `%${search}%` } },
           ],
         }
       : undefined;
 
     const products = await Product.findAll({
-      where: whereClause,
+      where,
       order: [['id', 'ASC']],
     });
-    res.json(products);
-  } catch (err) {
-    console.error('GET /api/products error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn products' });
-  }
-});
 
-app.get('/api/products/:id/reviews', async (req, res) => {
-  try {
-    const reviews = await Review.findAll({
-      where: { productId: req.params.id },
-      order: [['createdAt', 'DESC']],
-    });
-    res.json(reviews);
-  } catch (err) {
-    console.error('GET /api/products/:id/reviews error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn đánh giá' });
-  }
-});
-
-app.post('/api/products/:id/reviews', async (req, res) => {
-  try {
-    const { userName, rating, comment } = req.body;
-    const productId = Number(req.params.id);
-
-    if (!userName || !comment) {
-      return res.status(400).json({ error: 'Thiếu tên người dùng hoặc nội dung bình luận' });
-    }
-
-    const ratingNum = Number(rating) || 5;
-    if (ratingNum < 1 || ratingNum > 5) {
-      return res.status(400).json({ error: 'Đánh giá phải từ 1 đến 5 sao' });
-    }
-
-    const product = await Product.findByPk(productId);
-    if (!product) {
-      return res.status(404).json({ error: 'Sản phẩm không tồn tại' });
-    }
-
-    const newReview = await Review.create({
-      productId,
-      userName: String(userName).trim(),
-      rating: ratingNum,
-      comment: String(comment).trim(),
-    });
-
-    res.status(201).json(newReview);
-  } catch (err) {
-    console.error('POST /api/products/:id/reviews error', err);
-    res.status(500).json({ error: 'Lỗi khi thêm đánh giá' });
-  }
-});
-
-app.get('/api/products/:id', async (req, res) => {
-  try {
-    const product = await Product.findByPk(req.params.id);
-    if (!product) return res.status(404).json({ error: 'Sản phẩm không tồn tại' });
-    res.json(product);
-  } catch (err) {
-    console.error('GET /api/products/:id error', err);
+    res.json(
+      products.map((product) => ({
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        price: product.price,
+        originalPrice: product.originalPrice || null,
+        specs: product.specs,
+        rating: product.rating,
+        reviews: product.reviews,
+        description: product.description,
+        stock: product.stock,
+      }))
+    );
+  } catch (error) {
+    console.error('GET /api/products error:', error);
     res.status(500).json({ error: 'Lỗi khi truy vấn sản phẩm' });
   }
 });
 
-app.post('/api/products', async (req, res) => {
+app.post('/api/chat', async (req, res) => {
   try {
-    const { name, brand, price, specs, description, details } = req.body;
-    if (!name || !brand || !price || !specs || !description || !details) {
-      return res.status(400).json({ error: 'Thiếu thông tin sản phẩm bắt buộc' });
+    const { message, history } = req.body;
+
+    const userMsg = String(message || '').trim().toLowerCase();
+
+    if (!userMsg) {
+      return res.status(400).json({ error: 'Thiếu nội dung chat' });
     }
 
-    const product = await Product.create({
-      ...req.body,
-      price: Number(price),
-      originalPrice: req.body.originalPrice ? Number(req.body.originalPrice) : null,
-      stock: Number(req.body.stock || 10),
+    const products = await Product.findAll({ order: [['id', 'ASC']] });
+
+    let matched = products;
+    let filterType = '';
+
+    // Kiểm tra câu hỏi cụ thể trước
+    if (userMsg.includes('xin chào') || userMsg.includes('hello') || userMsg.includes('hi')) {
+      const reply = 'Xin chào Anh/Chị! 👋 Em có thể tư vấn điện thoại phù hợp với nhu cầu của Anh/Chị. Anh/Chị đang tìm điện thoại trong tầm giá bao nhiêu ạ? 💰';
+      return res.json({ reply });
+    } else if (userMsg.includes('trả góp')) {
+      const reply = 'PhoneHub hỗ trợ trả góp 0% lên đến 12 tháng! ✅\n\nĐiều kiện: CMND/CCCD còn hạn, hợp đồng lao động hoặc sao kê ngân hàng 3 tháng.\n\nAnh/Chị muốn trả góp sản phẩm nào ạ?';
+      return res.json({ reply });
+    } else if (userMsg.includes('đăng ký') || userMsg.includes('muốn đăng ký') || userMsg.includes('tôi muốn đăng ký')) {
+      const reply = 'Để được tư vấn đăng ký, Anh/Chị vui lòng liên hệ hotline 1800.1060 hoặc inbox trực tiếp. Nhân viên PhoneHub sẽ liên hệ lại ngay để hỗ trợ ạ!';
+      return res.json({ reply });
+    } else if (userMsg.includes('giấy tờ') || userMsg.includes('cần giấy') || userMsg.includes('điều kiện')) {
+      const reply = 'Để trả góp 0% tại PhoneHub, Anh/Chị cần chuẩn bị:\n\n✅ CMND/CCCD còn hạn\n✅ Hợp đồng lao động hoặc chứng chỉ công việc\n✅ Hoặc sao kê ngân hàng 3 tháng gần nhất\n\nAnh/Chị có đủ điều kiện để trả góp không ạ? 😊';
+      return res.json({ reply });
+    } else if (userMsg.includes('bảo hành')) {
+      const reply = 'PhoneHub bảo hành chính hãng 12 tháng tại tất cả cửa hàng! 🛡️\n\nHỗ trợ 1 đổi 1 trong 30 ngày nếu lỗi do nhà sản xuất.\n\nAnh/Chị cần hỗ trợ thêm gì không ạ?';
+      return res.json({ reply });
+    }
+
+    // Lọc theo hãng
+    if (userMsg.includes('iphone') || userMsg.includes('apple')) {
+      matched = products.filter((p) => p.brand.toLowerCase() === 'apple');
+      filterType = 'Apple';
+    } else if (userMsg.includes('samsung')) {
+      matched = products.filter((p) => p.brand.toLowerCase() === 'samsung');
+      filterType = 'Samsung';
+    } else if (userMsg.includes('xiaomi')) {
+      matched = products.filter((p) => p.brand.toLowerCase() === 'xiaomi');
+      filterType = 'Xiaomi';
+    } else if (userMsg.includes('oppo')) {
+      matched = products.filter((p) => p.brand.toLowerCase() === 'oppo');
+      filterType = 'OPPO';
+    }
+    // Lọc theo giá
+    else if (userMsg.includes('dưới 10') || userMsg.includes('10 triệu')) {
+      matched = products.filter((p) => Number(p.price) < 10000000);
+      filterType = 'dưới 10 triệu';
+    } else if (userMsg.includes('dưới 15') || userMsg.includes('15 triệu') || userMsg.includes('tầm trung')) {
+      matched = products.filter((p) => Number(p.price) < 15000000);
+      filterType = 'dưới 15 triệu';
+    } else if (userMsg.includes('dưới 20') || userMsg.includes('20 triệu')) {
+      matched = products.filter((p) => Number(p.price) < 20000000);
+      filterType = 'dưới 20 triệu';
+    } else if (userMsg.includes('dưới 25') || userMsg.includes('25 triệu trở xuống')) {
+      matched = products.filter((p) => Number(p.price) <= 25000000);
+      filterType = 'dưới 25 triệu';
+    } else if (userMsg.includes('rẻ')) {
+      matched = products.filter((p) => Number(p.price) < 12000000);
+      filterType = 'giá rẻ';
+    } else if (
+      userMsg.includes('trên 25') ||
+      userMsg.includes('trên 30') ||
+      userMsg.includes('flagship') ||
+      userMsg.includes('cao cấp') ||
+      userMsg.includes('mạnh nhất')
+    ) {
+      matched = products.filter((p) => Number(p.price) >= 25000000);
+      filterType = 'trên 25 triệu';
+    }
+
+    let reply = '';
+
+    if (matched.length > 0) {
+      // Nếu tìm thấy sản phẩm theo tiêu chí lọc
+      const top = matched.slice(0, 3);
+      const lines = top
+        .map(
+          (p) =>
+            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} (${p.reviews} đánh giá) • ${p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'}`
+        )
+        .join('\n\n');
+      reply = `Em tìm được ${top.length} sản phẩm phù hợp cho Anh/Chị:\n\n${lines}\n\nAnh/Chị muốn biết thêm chi tiết sản phẩm nào ạ? 😊`;
+    } else if (filterType) {
+      // Không tìm thấy theo tiêu chí lọc, hiển thị tất cả sản phẩm
+      const allLines = products.slice(0, 5)
+        .map(
+          (p) =>
+            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} • ${p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'}`
+        )
+        .join('\n\n');
+      reply = `Em chưa tìm được sản phẩm "${filterType}". Dưới đây là tất cả sản phẩm của PhoneHub:\n\n${allLines}\n\nAnh/Chị muốn chọn sản phẩm nào ạ? 😊`;
+    } else {
+      // Không có tiêu chí lọc cụ thể, hiển thị tất cả sản phẩm
+      const allLines = products.slice(0, 5)
+        .map(
+          (p) =>
+            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} • ${p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'}`
+        )
+        .join('\n\n');
+      reply = `Dưới đây là danh sách sản phẩm của PhoneHub:\n\n${allLines}\n\nAnh/Chị muốn tìm sản phẩm nào ạ? 😊`;
+    }
+
+    res.json({ reply });
+  } catch (err) {
+    console.error('POST /api/chat error', err);
+    res.status(500).json({
+      reply:
+        'Em xin lỗi, hiện tại hệ thống đang bận. Anh/Chị có thể liên hệ hotline 1800.1060 để được hỗ trợ ngay nhé! 📞',
     });
-
-    res.status(201).json(product);
-  } catch (err) {
-    console.error('POST /api/products error', err);
-    res.status(500).json({ error: 'Lỗi khi tạo sản phẩm' });
   }
 });
 
-app.put('/api/products/:id', async (req, res) => {
-  try {
-    const product = await Product.findByPk(req.params.id);
-    if (!product) return res.status(404).json({ error: 'Sản phẩm không tồn tại' });
-
-    await product.update({
-      ...req.body,
-      price: req.body.price ? Number(req.body.price) : product.price,
-      originalPrice: req.body.originalPrice ? Number(req.body.originalPrice) : product.originalPrice,
-      stock: req.body.stock ? Number(req.body.stock) : product.stock,
-    });
-
-    res.json(product);
-  } catch (err) {
-    console.error('PUT /api/products/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi cập nhật sản phẩm' });
-  }
+app.listen(port, () => {
+  console.log(`🚀 Server chạy tại http://localhost:${port}`);
 });
-
-app.delete('/api/products/:id', async (req, res) => {
-  try {
-    const product = await Product.findByPk(req.params.id);
-    if (!product) return res.status(404).json({ error: 'Sản phẩm không tồn tại' });
-
-    await product.destroy();
-    res.json({ message: 'Xóa sản phẩm thành công' });
-  } catch (err) {
-    console.error('DELETE /api/products/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi xóa sản phẩm' });
-  }
-});
-
-app.get('/api/cart', async (req, res) => {
-  try {
-    const items = await CartItem.findAll({ order: [['id', 'ASC']] });
-    res.json(items);
-  } catch (err) {
-    console.error('GET /api/cart error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn giỏ hàng' });
-  }
-});
-
-app.post('/api/cart', async (req, res) => {
-  try {
-    const { productId, name, brand, price, image, quantity = 1 } = req.body;
-    if (!productId || !name || !brand || !price) {
-      return res.status(400).json({ error: 'Thiếu thông tin cart item' });
-    }
-
-    const existing = await CartItem.findOne({ where: { productId } });
-    if (existing) {
-      existing.quantity += Number(quantity) || 1;
-      await existing.save();
-      return res.json(existing);
-    }
-
-    const item = await CartItem.create({
-      productId: Number(productId),
-      name,
-      brand,
-      price: Number(price),
-      image: image || '📱',
-      quantity: Number(quantity) || 1,
-    });
-
-    res.status(201).json(item);
-  } catch (err) {
-    console.error('POST /api/cart error', err);
-    res.status(500).json({ error: 'Lỗi khi thêm vào giỏ hàng' });
-  }
-});
-
-app.put('/api/cart/:id', async (req, res) => {
-  try {
-    const item = await CartItem.findByPk(req.params.id);
-    if (!item) return res.status(404).json({ error: 'Cart item không tồn tại' });
-
-    const quantity = Number(req.body.quantity);
-    if (!quantity || quantity <= 0) {
-      await item.destroy();
-      return res.json({ message: 'Đã xóa item khỏi giỏ hàng' });
-    }
-
-    item.quantity = quantity;
-    await item.save();
-    res.json(item);
-  } catch (err) {
-    console.error('PUT /api/cart/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi cập nhật giỏ hàng' });
-  }
-});
-
-app.delete('/api/cart/:id', async (req, res) => {
-  try {
-    const item = await CartItem.findByPk(req.params.id);
-    if (!item) return res.status(404).json({ error: 'Cart item không tồn tại' });
-
-    await item.destroy();
-    res.json({ message: 'Xóa cart item thành công' });
-  } catch (err) {
-    console.error('DELETE /api/cart/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi xóa cart item' });
-  }
-});
-
-app.delete('/api/cart', async (req, res) => {
-  try {
-    await CartItem.destroy({ where: {} });
-    res.json({ message: 'Đã xóa toàn bộ giỏ hàng' });
-  } catch (err) {
-    console.error('DELETE /api/cart error', err);
-    res.status(500).json({ error: 'Lỗi khi xóa giỏ hàng' });
-  }
-});
-
-app.get('/api/orders', async (req, res) => {
-  try {
-    const orders = await Order.findAll({ order: [['id', 'DESC']] });
-    res.json(orders.map(serializeOrder));
-  } catch (err) {
-    console.error('GET /api/orders error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn đơn hàng' });
-  }
-});
-
-app.get('/api/orders/:id', async (req, res) => {
-  try {
-    const order = await Order.findByPk(req.params.id);
-    if (!order) return res.status(404).json({ error: 'Đơn hàng không tồn tại' });
-    res.json(serializeOrder(order));
-  } catch (err) {
-    console.error('GET /api/orders/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi truy vấn đơn hàng' });
-  }
-});
-
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { customerName, customerEmail, customerPhone, customerAddress, items, paymentMethod } = req.body;
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Đơn hàng phải có ít nhất 1 sản phẩm' });
-    }
-
-    const normalizedItems = items.map((item) => ({
-      id: item.id,
-      name: item.name,
-      brand: item.brand,
-      price: Number(item.price),
-      quantity: Number(item.quantity || 1),
-    }));
-
-    const totalAmount = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const normalizedPaymentMethod = paymentMethod === 'qr' ? 'qr' : 'cash';
-
-    const order = await Order.create({
-      customerName: customerName || 'Khách lẻ',
-      customerEmail: customerEmail || '',
-      customerPhone: customerPhone || '',
-      customerAddress: customerAddress || '',
-      totalAmount,
-      status: normalizedPaymentMethod === 'qr' ? 'confirmed' : 'pending',
-      paymentMethod: normalizedPaymentMethod,
-      paymentStatus: normalizedPaymentMethod === 'qr' ? 'paid' : 'pending',
-      itemsJson: JSON.stringify(normalizedItems),
-    });
-
-    await CartItem.destroy({ where: {} });
-    res.status(201).json(serializeOrder(order));
-  } catch (err) {
-    console.error('POST /api/orders error', err);
-    res.status(500).json({ error: 'Lỗi khi tạo đơn hàng' });
-  }
-});
-
-app.put('/api/orders/:id', async (req, res) => {
-  try {
-    const order = await Order.findByPk(req.params.id);
-    if (!order) return res.status(404).json({ error: 'Đơn hàng không tồn tại' });
-
-    order.status = req.body.status || order.status;
-    order.paymentStatus = req.body.paymentStatus || order.paymentStatus;
-    await order.save();
-    res.json(serializeOrder(order));
-  } catch (err) {
-    console.error('PUT /api/orders/:id error', err);
-    res.status(500).json({ error: 'Lỗi khi cập nhật đơn hàng' });
-  }
-});
-
-app.get('/api/health', async (req, res) => {
-  try {
-    await sequelize.authenticate();
-    res.json({ status: 'ok', dialect: sequelize.getDialect() });
-  } catch (err) {
-    res.status(500).json({ status: 'fail', error: err.message });
-  }
-});
-
-async function startServer() {
-  try {
-    await sequelize.sync({ alter: true });
-
-    const adminEmail = 'admin@phonehub.com';
-    const adminPasswordHash = await bcrypt.hash('admin123', 10);
-    const existingAdmin = await User.findOne({ where: { email: adminEmail } });
-    if (!existingAdmin) {
-      await User.create({
-        name: 'Quản trị viên PhoneHub',
-        email: adminEmail,
-        role: 'Admin',
-        passwordHash: adminPasswordHash,
-      });
-      console.log('Seeded admin account');
-    } else if (existingAdmin.role !== 'Admin' || !existingAdmin.passwordHash) {
-      existingAdmin.role = 'Admin';
-      existingAdmin.passwordHash = adminPasswordHash;
-      await existingAdmin.save();
-      console.log('Updated admin account');
-    }
-
-    const users = await User.count();
-    if (users === 0) {
-      await User.bulkCreate([
-        { name: 'Trương Hoàng Thái Thuận', email: 'thuanch@phonehub.com', role: 'Admin' },
-        { name: 'Nguyễn Đức Quang', email: 'ducq@phonehub.com', role: 'Nhân viên bán hàng' },
-        { name: 'Nguyễn Trần Quốc Quang', email: 'quangqt@phonehub.com', role: 'CSKH' },
-        { name: 'Bùi Minh Nhật', email: 'nhatbm@phonehub.com', role: 'Giao nhận' },
-        { name: 'Phạm Bảo Tâm', email: 'tampb@phonehub.com', role: 'Kiểm hàng' },
-      ]);
-      console.log('Seeded initial users');
-    }
-
-    const products = await Product.count();
-    if (products === 0) {
-      await Product.bulkCreate(defaultProducts);
-      console.log('Seeded initial products');
-    }
-
-    app.listen(port, () => {
-      console.log(`Backend server running at http://localhost:${port}`);
-    });
-  } catch (err) {
-    console.error('Cannot start server', err);
-  }
-}
-
-startServer();

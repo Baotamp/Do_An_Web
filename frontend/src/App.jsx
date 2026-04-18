@@ -15,6 +15,7 @@ import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Users from './pages/Users';
 import NotFound from './pages/NotFound';
+import ChatWidget from "./components/ChatWidget";
 import './App.css';
 
 function App() {
@@ -77,6 +78,7 @@ function App() {
           </CartProvider>
         </AdminProvider>
       </AuthProvider>
+     <ChatWidget />  
     </BrowserRouter>
   );
 }
