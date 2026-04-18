@@ -127,8 +127,7 @@ app.get('/api/products', async (req, res) => {
 
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history } = req.body;
-
+    const { message } = req.body;
     const userMsg = String(message || '').trim().toLowerCase();
 
     if (!userMsg) {
@@ -137,98 +136,121 @@ app.post('/api/chat', async (req, res) => {
 
     const products = await Product.findAll({ order: [['id', 'ASC']] });
 
-    let matched = products;
-    let filterType = '';
+    const parsePriceRange = (text) => {
+      const normalized = text.replace(/\./g, '').replace(/,/, '.')
+      const result = { min: null, max: null }
+      const match = normalized.match(/(\d+(?:\.\d+)?)\s*triệu/)
 
-    // Kiểm tra câu hỏi cụ thể trước
+      if (!match) return result
+      const value = Number(match[1]) * 1000000
+
+      if (/\b(dưới|ít hơn|thấp hơn|trở xuống|tối đa|nhỏ hơn|<=?)\b/.test(normalized)) {
+        result.max = value
+      } else if (/\b(trên|lớn hơn|cao hơn|trở lên|>=?)\b/.test(normalized)) {
+        result.min = value
+      } else if (/\b(từ)\b/.test(normalized)) {
+        result.min = value
+      } else {
+        result.max = value
+      }
+
+      return result
+    };
+
+    const getBrand = (text) => {
+      if (text.includes('iphone') || text.includes('apple')) return 'apple'
+      if (text.includes('samsung')) return 'samsung'
+      if (text.includes('xiaomi')) return 'xiaomi'
+      if (text.includes('oppo')) return 'oppo'
+      return null
+    };
+
+    const priceRange = parsePriceRange(userMsg)
+    const brand = getBrand(userMsg)
+
+    let matched = products
+
+    if (brand) {
+      matched = matched.filter((p) => p.brand.toLowerCase() === brand)
+    }
+    if (priceRange.min !== null) {
+      matched = matched.filter((p) => Number(p.price) >= priceRange.min)
+    }
+    if (priceRange.max !== null) {
+      matched = matched.filter((p) => Number(p.price) <= priceRange.max)
+    }
+
+    const isCompareRequest = /so sánh giá|so sánh|so sanh giá|so sanh/.test(userMsg);
+
     if (userMsg.includes('xin chào') || userMsg.includes('hello') || userMsg.includes('hi')) {
-      const reply = 'Xin chào Anh/Chị! 👋 Em có thể tư vấn điện thoại phù hợp với nhu cầu của Anh/Chị. Anh/Chị đang tìm điện thoại trong tầm giá bao nhiêu ạ? 💰';
-      return res.json({ reply });
-    } else if (userMsg.includes('trả góp')) {
-      const reply = 'PhoneHub hỗ trợ trả góp 0% lên đến 12 tháng! ✅\n\nĐiều kiện: CMND/CCCD còn hạn, hợp đồng lao động hoặc sao kê ngân hàng 3 tháng.\n\nAnh/Chị muốn trả góp sản phẩm nào ạ?';
-      return res.json({ reply });
-    } else if (userMsg.includes('đăng ký') || userMsg.includes('muốn đăng ký') || userMsg.includes('tôi muốn đăng ký')) {
-      const reply = 'Để được tư vấn đăng ký, Anh/Chị vui lòng liên hệ hotline 1800.1060 hoặc inbox trực tiếp. Nhân viên PhoneHub sẽ liên hệ lại ngay để hỗ trợ ạ!';
-      return res.json({ reply });
-    } else if (userMsg.includes('giấy tờ') || userMsg.includes('cần giấy') || userMsg.includes('điều kiện')) {
-      const reply = 'Để trả góp 0% tại PhoneHub, Anh/Chị cần chuẩn bị:\n\n✅ CMND/CCCD còn hạn\n✅ Hợp đồng lao động hoặc chứng chỉ công việc\n✅ Hoặc sao kê ngân hàng 3 tháng gần nhất\n\nAnh/Chị có đủ điều kiện để trả góp không ạ? 😊';
-      return res.json({ reply });
-    } else if (userMsg.includes('bảo hành')) {
-      const reply = 'PhoneHub bảo hành chính hãng 12 tháng tại tất cả cửa hàng! 🛡️\n\nHỗ trợ 1 đổi 1 trong 30 ngày nếu lỗi do nhà sản xuất.\n\nAnh/Chị cần hỗ trợ thêm gì không ạ?';
-      return res.json({ reply });
+      return res.json({
+        reply:
+          'Xin chào Anh/Chị! 👋 Em có thể tư vấn điện thoại phù hợp với nhu cầu của Anh/Chị. Anh/Chị đang tìm điện thoại trong tầm giá bao nhiêu ạ? 💰',
+      });
     }
 
-    // Lọc theo hãng
-    if (userMsg.includes('iphone') || userMsg.includes('apple')) {
-      matched = products.filter((p) => p.brand.toLowerCase() === 'apple');
-      filterType = 'Apple';
-    } else if (userMsg.includes('samsung')) {
-      matched = products.filter((p) => p.brand.toLowerCase() === 'samsung');
-      filterType = 'Samsung';
-    } else if (userMsg.includes('xiaomi')) {
-      matched = products.filter((p) => p.brand.toLowerCase() === 'xiaomi');
-      filterType = 'Xiaomi';
-    } else if (userMsg.includes('oppo')) {
-      matched = products.filter((p) => p.brand.toLowerCase() === 'oppo');
-      filterType = 'OPPO';
+    if (userMsg.includes('trả góp')) {
+      return res.json({
+        reply:
+          'PhoneHub hỗ trợ trả góp 0% lên đến 12 tháng! ✅\n\nĐiều kiện: CMND/CCCD còn hạn, hợp đồng lao động hoặc sao kê ngân hàng 3 tháng.\n\nAnh/Chị muốn trả góp sản phẩm nào ạ?',
+      });
     }
-    // Lọc theo giá
-    else if (userMsg.includes('dưới 10') || userMsg.includes('10 triệu')) {
-      matched = products.filter((p) => Number(p.price) < 10000000);
-      filterType = 'dưới 10 triệu';
-    } else if (userMsg.includes('dưới 15') || userMsg.includes('15 triệu') || userMsg.includes('tầm trung')) {
-      matched = products.filter((p) => Number(p.price) < 15000000);
-      filterType = 'dưới 15 triệu';
-    } else if (userMsg.includes('dưới 20') || userMsg.includes('20 triệu')) {
-      matched = products.filter((p) => Number(p.price) < 20000000);
-      filterType = 'dưới 20 triệu';
-    } else if (userMsg.includes('dưới 25') || userMsg.includes('25 triệu trở xuống')) {
-      matched = products.filter((p) => Number(p.price) <= 25000000);
-      filterType = 'dưới 25 triệu';
-    } else if (userMsg.includes('rẻ')) {
-      matched = products.filter((p) => Number(p.price) < 12000000);
-      filterType = 'giá rẻ';
-    } else if (
-      userMsg.includes('trên 25') ||
-      userMsg.includes('trên 30') ||
-      userMsg.includes('flagship') ||
-      userMsg.includes('cao cấp') ||
-      userMsg.includes('mạnh nhất')
-    ) {
-      matched = products.filter((p) => Number(p.price) >= 25000000);
-      filterType = 'trên 25 triệu';
+
+    if (userMsg.includes('đăng ký') || userMsg.includes('tôi muốn đăng ký') || userMsg.includes('muốn đăng ký')) {
+      return res.json({
+        reply:
+          'Để đăng ký hỗ trợ trả góp, Anh/Chị vui lòng liên hệ hotline 1800.1060 hoặc để lại số, nhân viên PhoneHub sẽ gọi lại ngay ạ.',
+      });
+    }
+
+    if (userMsg.includes('giấy tờ') || userMsg.includes('cần giấy') || userMsg.includes('điều kiện')) {
+      return res.json({
+        reply:
+          'Để trả góp 0% tại PhoneHub, Anh/Chị cần chuẩn bị:\n\n✅ CMND/CCCD còn hạn\n✅ Hợp đồng lao động hoặc sao kê ngân hàng 3 tháng\n\nAnh/Chị có muốn em giúp chọn sản phẩm để đăng ký không ạ?',
+      });
+    }
+
+    if (isCompareRequest) {
+      const items = matched.length > 0 ? matched : products;
+      const sorted = [...items].sort((a, b) => Number(a.price) - Number(b.price));
+      const cheapest = sorted.slice(0, 3);
+      const expensive = sorted.slice(-3).reverse();
+
+      const formatItem = (p) =>
+        `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} (${p.reviews} đánh giá) • ${
+          p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'
+        }`;
+
+      return res.json({
+        reply: `Dưới đây là so sánh giá ${brand ? `của ${brand}` : ''} cho Anh/Chị:\n\n` +
+          `🔹 Rẻ nhất:\n${cheapest.map(formatItem).join('\n\n')}\n\n` +
+          `🔸 Cao cấp nhất:\n${expensive.map(formatItem).join('\n\n')}\n\n` +
+          `Anh/Chị muốn xem thêm chi tiết sản phẩm nào ạ?`,
+      });
     }
 
     let reply = '';
-
     if (matched.length > 0) {
-      // Nếu tìm thấy sản phẩm theo tiêu chí lọc
       const top = matched.slice(0, 3);
-      const lines = top
+      reply = `Em tìm được ${top.length} sản phẩm phù hợp cho Anh/Chị:\n\n${top
         .map(
           (p) =>
-            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} (${p.reviews} đánh giá) • ${p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'}`
+            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} (${p.reviews} đánh giá) • ${
+              p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'
+            }`
         )
-        .join('\n\n');
-      reply = `Em tìm được ${top.length} sản phẩm phù hợp cho Anh/Chị:\n\n${lines}\n\nAnh/Chị muốn biết thêm chi tiết sản phẩm nào ạ? 😊`;
-    } else if (filterType) {
-      // Không tìm thấy theo tiêu chí lọc, hiển thị tất cả sản phẩm
-      const allLines = products.slice(0, 5)
-        .map(
-          (p) =>
-            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} • ${p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'}`
-        )
-        .join('\n\n');
-      reply = `Em chưa tìm được sản phẩm "${filterType}". Dưới đây là tất cả sản phẩm của PhoneHub:\n\n${allLines}\n\nAnh/Chị muốn chọn sản phẩm nào ạ? 😊`;
+        .join('\n\n')}\n\nAnh/Chị muốn biết thêm chi tiết sản phẩm nào ạ? 😊`;
     } else {
-      // Không có tiêu chí lọc cụ thể, hiển thị tất cả sản phẩm
       const allLines = products.slice(0, 5)
         .map(
           (p) =>
-            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} • ${p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'}`
+            `📱 ${p.name} - ${Number(p.price).toLocaleString('vi-VN')}đ\n   ${p.specs}\n   ⭐ ${p.rating} (${p.reviews} đánh giá) • ${
+              p.stock > 0 ? '✅ Còn hàng' : '❌ Hết hàng'
+            }`
         )
         .join('\n\n');
-      reply = `Dưới đây là danh sách sản phẩm của PhoneHub:\n\n${allLines}\n\nAnh/Chị muốn tìm sản phẩm nào ạ? 😊`;
+
+      reply = `Em chưa tìm được sản phẩm chính xác theo yêu cầu. Dưới đây là một vài sản phẩm PhoneHub đang có:\n\n${allLines}\n\nAnh/Chị muốn chọn sản phẩm nào ạ?`;
     }
 
     res.json({ reply });
