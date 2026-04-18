@@ -3,7 +3,11 @@ import { BotIcon } from "./Icons";
 function formatText(text) {
   return text
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\n/g, "<br/>");
+    .replace(/\n/g, "<br/>")
+    .replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
 }
 
 export default function MessageBubble({ message }) {
